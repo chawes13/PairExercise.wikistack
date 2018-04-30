@@ -3,6 +3,9 @@ const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const path = require('path');
 const layout = require('./views/layout');
+const { db, Page, User } = require('./models/index');
+const userRouter = require('./routes/user');
+const wikiRouter = require('./routes/wiki');
 
 const app = express();
 
@@ -11,17 +14,29 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(morgan('combined'));
 
-// Routes (before refactor)
+// Modular Routers
+app.use('/wiki', wikiRouter);
+app.use('/users', userRouter);
+
+// Main Routes
 app.get('/', (req, res) => {
-  res.send(layout(''));
+  res.redirect('/wiki');
 });
 
+// App Initialization
+async function init() {
+  try{
+    const PORT = process.env.PORT || 3000;
+    await db.authenticate();
+    await db.sync();
 
+    app.listen(PORT, () => {
+      console.log(`Keep calm and deploy on: ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start application', error);
+  }
 
+}
 
-
-
-const PORT = process.env.PORT || 1337;
-app.listen(PORT, () => {
-  console.log(`Keep calm and deploy on: ${PORT}`);
-});
+init();
